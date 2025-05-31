@@ -1,5 +1,6 @@
 import java.net.*;
 import java.io.*;
+import org.json.JSONObject;
 
 public class Server extends Thread {
 
@@ -61,8 +62,15 @@ public class Server extends Thread {
 
          while ((inputLine = in.readLine()) != null) {
             System.out.println("Servidor recebeu: " + inputLine);
-            System.out.println("Servidor enviou: " + inputLine.toUpperCase());
-            out.println(inputLine.toUpperCase());
+            
+            JSONObject jsonRecebido = new JSONObject(inputLine);
+            String mensagem = jsonRecebido.getString("message");
+
+            JSONObject jsonResposta = new JSONObject();
+            jsonResposta.put("message", mensagem.toUpperCase());
+            
+            System.out.println("Servidor enviou: " + jsonResposta.toString() + " " + clientSocket.getInetAddress().getHostAddress() + " : " + clientSocket.getPort());
+            out.println(jsonResposta.toString());
 
             if (inputLine.toUpperCase().equals("BYE"))
                break;

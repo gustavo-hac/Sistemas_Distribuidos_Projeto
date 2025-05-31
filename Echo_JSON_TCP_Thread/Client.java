@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import org.json.JSONObject;
 
 public class Client {
 
@@ -37,8 +38,13 @@ public class Client {
         System.out.println("Conectado. Digite (\"bye\" para sair)");
         System.out.print("Digite: ");
         while ((userInput = stdIn.readLine()) != null) {
-            out.println(userInput);
-
+            //out.println(userInput);
+        	
+            JSONObject json = new JSONObject();
+            json.put("message", userInput);
+            
+            out.println(json.toString());
+            
             // end loop
             if (userInput.toUpperCase().equals("BYE"))
                 break;
