@@ -68,14 +68,48 @@ public class Server extends Thread {
             JSONObject jsonRecebido = new JSONObject(inputLine);
             JSONObject jsonResposta = new JSONObject();
 
-            if(!jsonRecebido.isNull(inputLine)){
-              String mensagem = jsonRecebido.getString("message");
-              jsonResposta.put("message", mensagem.toUpperCase());
-            }        
-            else{
-              jsonResposta.put("message", "ERROR");
+            if(jsonRecebido.isEmpty()){
+              jsonResposta.put("message", "NULL JSON");
+            }else if(jsonRecebido.isNull("op")){
+              jsonResposta.put("message", "NULL \"op\"");
+              break;
+            }else{
+              if(!jsonRecebido.isNull("op")){
+                String usuario= jsonRecebido.getString("op");
+
+                String regexOp = "[0-9]{3}$";  
+                if(!Pattern.matches(regexOp, usuario)){
+                  System.out.println("\"op\" Fora do padrão");
+                }
+              }
+              if(!jsonRecebido.isNull("user")){
+                String usuario= jsonRecebido.getString("user");
+                
+                String regexUser = "^[a-zA-Z0-9]{6,16}$";
+                if(!Pattern.matches(regexUser, usuario)){
+                  System.out.println("\"usuario\" Fora do padrão");
+                }
+              }
+              if(!jsonRecebido.isNull("pass")){
+                String senha= jsonRecebido.getString("pass");
+
+                String regexPass = "^([a-zA-Z0-9]{6,32}$";
+                if(!Pattern.matches(regexPass, senha)){
+                  System.out.println("\"pass\" Fora do padrão");
+                }
+              }
+              if(!jsonRecebido.isNull("nick")){
+                String apelido= jsonRecebido.getString("nick");
+
+                String regexNick = "^[a-zA-Z0-9]{6,16}$";
+                if(!Pattern.matches(regexNick, apelido)){
+                  System.out.println("\"nick\" Fora do padrão");
+                }
+              }
+              jsonResposta.put("op", "012");
+                           
             }
-            
+
             System.out.println("Servidor enviou: " + jsonResposta.toString() + " " + clientSocket.getInetAddress().getHostAddress() + " : " + clientSocket.getPort());
             out.println(jsonResposta.toString());
 
