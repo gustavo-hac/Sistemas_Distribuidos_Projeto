@@ -1,6 +1,8 @@
 import java.net.*;
 import java.io.*;
 import org.json.JSONObject;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 public class Server extends Thread {
 
@@ -64,10 +66,15 @@ public class Server extends Thread {
             System.out.println("Servidor recebeu: " + inputLine);
             
             JSONObject jsonRecebido = new JSONObject(inputLine);
-            String mensagem = jsonRecebido.getString("message");
-
             JSONObject jsonResposta = new JSONObject();
-            jsonResposta.put("message", mensagem.toUpperCase());
+
+            if(!jsonRecebido.isNull(inputLine)){
+              String mensagem = jsonRecebido.getString("message");
+              jsonResposta.put("message", mensagem.toUpperCase());
+            }        
+            else{
+              jsonResposta.put("message", "ERROR");
+            }
             
             System.out.println("Servidor enviou: " + jsonResposta.toString() + " " + clientSocket.getInetAddress().getHostAddress() + " : " + clientSocket.getPort());
             out.println(jsonResposta.toString());
