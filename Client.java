@@ -35,49 +35,67 @@ public class Client {
         BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
         String userInput;
         String option;
+
+        JSONObject json;
+        String user;
+        String pass;
+        String nick;
+        String token;
         do {
           System.out.print("0 = sair, 1 = Echo, 2 = Regitrar\n");
           option = stdIn.readLine();
           switch (option){
-            case "0":
+            case "0" -> {
               break;
-            case "1":
-            // echo_function(out, in);
+            }
+            case "1" -> {
+              // echo_function(out, in);
               System.out.println("Conectado. Digite (\"bye\" para sair)");
               System.out.print("Digite: ");
               while ((userInput = stdIn.readLine()) != null) {
                   //out.println(userInput);
-                
-                  JSONObject json = new JSONObject();
+                  json = new JSONObject();
                   json.put("message", userInput);
                   
                   out.println(json.toString());
                   
                   // end loop
                   if (userInput.toUpperCase().equals("BYE"))
-                    break;
-      
+                      break;
+                  
                   System.out.println("Servidor retornou: " + in.readLine());
                   System.out.print("Digite: ");
-              }
-              break;
-            case "2":
-              JSONObject json = new JSONObject();
+              } 
+            }
+            case "2" -> {
+              json = new JSONObject();
               json.put("op", "010");
               System.out.println("Usuario:");
-              String user = stdIn.readLine();
+              user = stdIn.readLine();
               json.put("user", user);
               System.out.println("Apelido:");
-              String nick = stdIn.readLine();
+              nick = stdIn.readLine();
               json.put("nick", nick);
               System.out.println("Senha:");
-              String pass = stdIn.readLine();
+              pass = stdIn.readLine();
               json.put("pass", pass);
               out.println(json.toString());
-              break;
-            default :
-              System.out.println("Digite uma opção valida");
-              break;
+            }
+            case "3" -> {
+              json = new JSONObject();
+              json.put("op", "020");
+              System.out.println("Usuario:");
+              user = stdIn.readLine();
+              json.put("user", user);
+              System.out.println("Apelido:");
+              nick = stdIn.readLine();
+              json.put("nick", nick);
+              System.out.println("Senha:");
+              pass = stdIn.readLine();
+              json.put("pass", pass);
+              out.println(json.toString());
+            }
+            default -> System.out.println("Digite uma opção valida");
           }
         } while (!option.equals("0"));
           

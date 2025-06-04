@@ -86,18 +86,22 @@ public class Server extends Thread {
           }else{
             String option = verifica.getOp();
             switch (option) {
-              case "000":
-                jsonResposta.put("msg", "case 000");
-                break;
-              case "010":
-                jsonResposta.put("msg", "case 010");
-                break;
-              case "020":
-                jsonResposta.put("msg", "case 020");
-                break;
-              default:
-                jsonResposta.put("msg", "OP está Nulo");
-                break;
+              case "000" -> {
+                  System.out.println(option);
+                  jsonResposta.put("msg", "case 000");
+                  }
+              case "010" -> {
+                  System.out.println(option);
+                  jsonResposta.put("msg", "case 010");
+                  }
+              case "020" -> {
+                  System.out.println(option);
+                  jsonResposta.put("msg", "case 020");
+                  }
+              default -> {
+                  System.out.println(option);
+                  jsonResposta.put("msg", "OP está Nulo");
+                  }
             }
           }
         }
