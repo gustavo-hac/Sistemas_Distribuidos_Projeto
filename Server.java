@@ -8,7 +8,7 @@ import java.net.Socket;
 import org.json.JSONObject;
 
 import controllers.Verify;
-import models.User;
+//import models.User;
 
 public class Server extends Thread {
 
@@ -81,7 +81,7 @@ public class Server extends Thread {
           jsonResposta.put("msg", "JSON está vazio");
         }else{
           Verify verifica = new Verify(jsonRecebido);
-          if(verifica.opNULL()){
+          if(verifica.opIsNULL()){
             jsonResposta.put("msg", "OP está Nulo");
           }else{
             String option = verifica.getOp();
@@ -89,10 +89,20 @@ public class Server extends Thread {
               case "000" -> {
                   System.out.println(option);
                   jsonResposta.put("msg", "case 000");
+                  if(verifica.loginContainNULL()){
+                    jsonResposta.put("op", "case 002");
+                  }else{
+                    
+                  }
                   }
               case "010" -> {
                   System.out.println(option);
                   jsonResposta.put("msg", "case 010");
+                  if(verifica.loginContainNULL()){
+                    jsonResposta.put("op", "case 002");
+                  }else{
+                    
+                  }
                   }
               case "020" -> {
                   System.out.println(option);
@@ -100,55 +110,11 @@ public class Server extends Thread {
                   }
               default -> {
                   System.out.println(option);
-                  jsonResposta.put("msg", "OP está Nulo");
+                  jsonResposta.put("msg", "OP não estabelecido");
                   }
             }
           }
         }
-
-        
-        /*
-        if(jsonRecebido.isEmpty()){
-          jsonResposta.put("message", "NULL JSON");
-        }else if(jsonRecebido.isNull("op")){
-          jsonResposta.put("message", "NULL \"op\"");
-          break;
-        }else{
-          if(!jsonRecebido.isNull("op")){
-            String usuario= jsonRecebido.getString("op");
-
-            String regexOp = "[0-9]{3}$";  
-            if(!Pattern.matches(regexOp, usuario)){
-              System.out.println("\"op\" Fora do padrão");
-            }
-          }
-          if(!jsonRecebido.isNull("user")){
-            String usuario= jsonRecebido.getString("user");
-            
-            String regexUser = "^[a-zA-Z0-9]{6,16}$";
-            if(!Pattern.matches(regexUser, usuario)){
-              System.out.println("\"usuario\" Fora do padrão");
-            }
-          }
-          if(!jsonRecebido.isNull("pass")){
-            String senha= jsonRecebido.getString("pass");
-
-            String regexPass = "^([a-zA-Z0-9]{6,32}$";
-            if(!Pattern.matches(regexPass, senha)){
-              System.out.println("\"pass\" Fora do padrão");
-            }
-          }
-          if(!jsonRecebido.isNull("nick")){
-            String apelido= jsonRecebido.getString("nick");
-
-            String regexNick = "^[a-zA-Z0-9]{6,16}$";
-            if(!Pattern.matches(regexNick, apelido)){
-              System.out.println("\"nick\" Fora do padrão");
-            }
-          }
-            jsonResposta.put("op", "012");
-        }
-        */
 
         System.out.println("Servidor enviou: " + jsonResposta.toString() + " " + clientSocket.getInetAddress().getHostAddress() + " : " + clientSocket.getPort());
         out.println(jsonResposta.toString());
