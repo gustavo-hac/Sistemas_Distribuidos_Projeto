@@ -6,17 +6,14 @@ public class User {
   private String nick;
   private String token;
   
-  public void Usuario() {
-  }
-  
-  public void Usuario(String user, String pass, String nick, String token) {
+  public User(String user, String pass, String nick, String token) {
       this.user = user;
       this.pass = pass;
       this.nick = nick;
       this.token = token;
   }
   
-  public void Usuario(String user, String pass, String nick) {
+  public User(String user, String pass, String nick) {
       this.user = user;
       this.pass = pass;
       this.nick = nick;
@@ -65,7 +62,7 @@ public class User {
               '}'; // Não inclui a senha por segurança
   }
   
-  public String printALL() {
+  public String printALL() { // Print de testes (inclui senha)
     return "Usuario{" +
             "user='" + user + '\'' +
             ", pass='" + pass + '\'' +
