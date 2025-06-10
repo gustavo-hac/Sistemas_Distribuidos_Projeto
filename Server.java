@@ -9,6 +9,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import controllers.VerifyJson;
+import javax.management.openmbean.OpenDataException;
 import models.User;
 import models.UserList;
 
@@ -68,21 +69,22 @@ public class Server extends Thread {
       try (PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
         BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         String inputLine;
-        // String errorValidation = "Dados fornecidos não existem ou não conferem com os dados no sistema"; // Erro para testes do projeto, verifica se os dados existem ou conferem com o informado. (Remover futuramente)
-        /* Just Test
-        User user = new User();*/
         while ((inputLine = in.readLine()) != null) {
           System.out.println("Servidor recebeu: " + inputLine);
           JSONObject jsonResponse = new JSONObject();
           JSONObject jsonInput = new JSONObject();
-
+        
           try {jsonInput = new JSONObject(inputLine);
           }catch (JSONException  e) {
             jsonInput = new JSONObject();
             System.out.println("Erro: entrada não é um JSON válido.");
             jsonResponse.put("erro", "Formato inválido. Esperado JSON.");
           }
-          
+
+          String opSucess;
+          String opError; 
+          String msgValidationError = "Dados fornecidos não existem ou não conferem com os dados no sistema";
+
           if(! (jsonInput.isEmpty())){
             VerifyJson verifyJsonInput = new VerifyJson(jsonInput);
 
@@ -105,11 +107,16 @@ public class Server extends Thread {
                   }
                 }
                 case "010" -> { // Cadastro
+                  opSucess = "011";
+                  opError = "012";
+                  String user = verifyJsonInput.getValue("user");
+                  String pass = verifyJsonInput.getValue("pass");
+                  String nick = verifyJsonInput.getValue("nick");
                   if(verifyJsonInput.operationIsValid("register")){
-                      jsonResponse = verifyJsonInput.getJsonResponse();
-                  }else{
-                      jsonResponse = verifyJsonInput.getJsonResponse();
-                  }
+                    if(userList.createUser(user, pass, nick)){
+                      jsonResponse.put("op", opSucess);
+                    }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Já existe uma conta com este usuário"); }
+                  }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
                 }
                 case "020" -> { // Logout
                   if(verifyJsonInput.operationIsValid("logout")){

@@ -63,7 +63,6 @@ public class VerifyJson {
       return false;
     }else{
       if(this.operationRegex(operation)){ // Retorna TRUE quando todos os campos estão dentro do REGEX, FALSE caso contrário.
-        jsonResponse.put("op", opSucess);
         return true;
       }else{
         jsonResponse.put("op", opError);
