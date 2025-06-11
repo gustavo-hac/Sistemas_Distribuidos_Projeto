@@ -88,7 +88,7 @@ public class VerifyJson {
     return isNull;
   }
 
-  // Verificaçõe de REGEX para cada "op" (Operação)
+  // Verificaçõe de qual REGEX será utilizado com base na "op" (Operação)
   public boolean operationRegex(String operation){
     List<String> keyList;
     boolean succes = true;
@@ -132,11 +132,11 @@ public class VerifyJson {
   }
 
   // Getters
-  public String getValue(String key) { // Função que retorna o valor um campo(key) do JSON. Se for NULO retorna String vazia ("").
+  public String getValue(String key) { // Função que retorna o valor de um campo(key) do JSON. Se for NULO retorna String vazia ("").
     if (!this.json.isNull(key)){
       return this.json.getString(key); 
     }else{
       return "";
     } 
   }
-} 
+}
