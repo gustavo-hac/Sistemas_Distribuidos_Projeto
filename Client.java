@@ -1,6 +1,8 @@
 import java.io.*;
 import java.net.*;
+import java.time.chrono.ThaiBuddhistChronology;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Client {
@@ -38,17 +40,11 @@ public class Client {
 
         JSONObject json;
         String user, pass, nick, token, new_nick, new_pass;
+        String sessionToken = null;
         do {
           System.out.print("Digite a opção:\n-1 = TRAVAR O SERVER, 0 = sair, 1 = Login, 2 = Retornar Dados, 3 = Cadastrar, 4 = Logout, 5 = Alterar Cadastro, 6 = Apagar Cadastro, 7 = Alterar Cadastro(admin) 8 = Apagar Cadastro(admin)\n");
           System.out.println("ANTES\n");
           option = stdIn.readLine();
-          if(option == null){
-            System.out.println("NULO");
-          }else{
-            System.out.println(option);
-            System.out.println("ALGO");
-          }
-          System.out.println(option);
           switch (option){        
             case "-1" -> {
               json = new JSONObject();
@@ -60,7 +56,7 @@ public class Client {
               String z = stdIn.readLine();
               json.put("z", z);
               out.println(json.toString());
-              System.out.println("Servidor enviou: " + json.toString());
+              System.out.println("Cliente enviou: " + json.toString());
               break;
             }
             case "0" -> {
@@ -77,7 +73,7 @@ public class Client {
               pass = stdIn.readLine();
               json.put("pass", pass);
               out.println(json.toString());
-              System.out.println("Servidor enviou: " + json.toString());
+              System.out.println("Cliente enviou: " + json.toString());
               break;
             }
             case "2" -> {
@@ -86,11 +82,15 @@ public class Client {
               System.out.println("Usuario:");
               user = stdIn.readLine();
               json.put("user", user);
-              System.out.println("Token:");
+              System.out.println("Token (Para utilizar o token armazenado digite -1)");
               token = stdIn.readLine();
+              if(token.equals("-1")){
+                if(sessionToken == null){  json.put("token", token); }
+                else{ token = sessionToken; }
+              }
               json.put("token", token);
               out.println(json.toString());
-              System.out.println("Servidor enviou: " + json.toString());
+              System.out.println("Cliente enviou: " + json.toString());
               break;
             }
             case "3" -> {
@@ -106,7 +106,7 @@ public class Client {
               pass = stdIn.readLine();
               json.put("pass", pass);
               out.println(json.toString());
-              System.out.println("Servidor enviou: " + json.toString());
+              System.out.println("Cliente enviou: " + json.toString());
               break;
             }
             case "4" -> {
@@ -115,11 +115,15 @@ public class Client {
               System.out.println("Usuario:");
               user = stdIn.readLine();
               json.put("user", user);
-              System.out.println("Token:");
+              System.out.println("Token (Para utilizar o token armazenado digite -1)");
               token = stdIn.readLine();
+              if(token.equals("-1")){
+                if(sessionToken == null){  json.put("token", token); }
+                else{ token = sessionToken; }
+              }
               json.put("token", token);
               out.println(json.toString());
-              System.out.println("Servidor enviou: " + json.toString());
+              System.out.println("Cliente enviou: " + json.toString());
               break;
             }
             case "5" -> {
@@ -137,11 +141,15 @@ public class Client {
               System.out.println("Nova Senha:");
               new_pass = stdIn.readLine();
               json.put("new_pass", new_pass);
-              System.out.println("Token:");
+              System.out.println("Token (Para utilizar o token armazenado digite -1)");
               token = stdIn.readLine();
+              if(token.equals("-1")){
+                if(sessionToken == null){  json.put("token", token); }
+                else{ token = sessionToken; }
+              }
               json.put("token", token);
               out.println(json.toString());
-              System.out.println("Servidor enviou: " + json.toString());
+              System.out.println("Cliente enviou: " + json.toString());
               break;
             }
             case "6" -> {
@@ -155,9 +163,13 @@ public class Client {
               json.put("pass", pass);
               System.out.println("Token");
               token = stdIn.readLine();
+              if(token.equals("-1")){
+                if(sessionToken == null){  json.put("token", token); }
+                else{ token = sessionToken; }
+              }
               json.put("token", token);
               out.println(json.toString());
-              System.out.println("Servidor enviou: " + json.toString());
+              System.out.println("Cliente enviou: " + json.toString());
               break;
             }
             case "7" -> {
@@ -166,7 +178,7 @@ public class Client {
               System.out.println("Usuario:");
               user = stdIn.readLine();
               json.put("user", user);
-              System.out.println("Token:");
+              System.out.println("Token (Para utilizar o token armazenado digite -1)");
               token = stdIn.readLine();
               json.put("token", token);
               System.out.println("Nova Apelido:");
@@ -176,7 +188,7 @@ public class Client {
               new_pass = stdIn.readLine();
               json.put("new_pass", new_pass);
               out.println(json.toString());
-              System.out.println("Servidor enviou: " + json.toString());
+              System.out.println("Cliente enviou: " + json.toString());
               break;
             }
             case "8" -> {
@@ -185,11 +197,15 @@ public class Client {
               System.out.println("Usuario:");
               user = stdIn.readLine();
               json.put("user", user);
-              System.out.println("Token");
+              System.out.println("Token)");
               token = stdIn.readLine();
+              if(token.equals("-1")){
+                if(sessionToken == null){ json.put("token", token); }
+                else{ token = sessionToken; }
+              }
               json.put("token", token);
               out.println(json.toString());
-              System.out.println("Servidor enviou: " + json.toString());
+              System.out.println("Cliente enviou: " + json.toString());
               break;
             }
             default -> {
@@ -197,7 +213,25 @@ public class Client {
               break;
             }
           }
-          System.out.println("Servidor retornou: " + in.readLine());
+          String inputLine = in.readLine();
+          System.out.println("Cliente recebeu: " + inputLine);
+
+          JSONObject jsonInput;
+    
+          try {
+            jsonInput = new JSONObject(inputLine);
+            if(jsonInput.get("op").toString().equals("001") ){ 
+              sessionToken = jsonInput.get("token").toString();
+              System.out.printf("\"token\" guardado: %s  ", sessionToken);
+              }
+            if(jsonInput.get("op") == "006"){ 
+              System.out.printf("\"user\": %s , \"nick\": %s"  ,jsonInput.get("user").toString(), jsonInput.get("nick").toString());
+            }
+          }catch (JSONException  e) {
+            jsonInput = new JSONObject();
+            System.out.println("Erro: Eeposta não é um JSON válido.");
+            // jsonResponse.put("erro", "Formato inválido. Esperado JSON.");
+          }
         } while (!option.equals("0"));
           
         out.close();

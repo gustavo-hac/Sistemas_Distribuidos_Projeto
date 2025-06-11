@@ -15,8 +15,8 @@ import models.UserList;
 
 public class Server extends Thread {
   protected Socket clientSocket;
-  UserList userList = new UserList();
-  UserList userLogged = new UserList();
+  UserList userList = new UserList(); // Usuarios existentes
+  UserList userSessionList = new UserList(); // Usuarios conectados
   public static void main(String[] args) throws IOException {
     ServerSocket serverSocket = null;
 
@@ -78,12 +78,20 @@ public class Server extends Thread {
           }catch (JSONException  e) {
             jsonInput = new JSONObject();
             System.out.println("Erro: entrada não é um JSON válido.");
-            jsonResponse.put("erro", "Formato inválido. Esperado JSON.");
+            // jsonResponse.put("erro", "Formato inválido. Esperado JSON.");
           }
 
           String opSucess;
-          String opError; 
+          String opError;
+          String msgRegisterError = "Já existe uma conta com este usuário"; 
           String msgValidationError = "Dados fornecidos não existem ou não conferem com os dados no sistema";
+          // Declaração dos campos que podem ser fornecidos pelo Cliente.
+          String userInput;
+          String passInput;
+          String nickInput;
+          String tokenInput;
+          String newPassInput;
+          String newNickInput;
 
           if(! (jsonInput.isEmpty())){
             VerifyJson verifyJsonInput = new VerifyJson(jsonInput);
@@ -92,52 +100,95 @@ public class Server extends Thread {
               String option = verifyJsonInput.getValue("op");
               switch (option) {
                 case "000" -> { // Login
+                  opSucess = "001";
+                  opError = "002";
                   if(verifyJsonInput.operationIsValid("login")){
-                      jsonResponse.put("token", "a1");
-                      jsonResponse = verifyJsonInput.getJsonResponse();
-                  }else{
-                      jsonResponse = verifyJsonInput.getJsonResponse();
-                  }
+                    userInput = verifyJsonInput.getValue("user");
+                    passInput = verifyJsonInput.getValue("pass");
+                    User userData = userList.retrieveUserByPass(userInput, passInput);
+                    if(userData != null){
+                      userSessionList.createUser(userData.getUser(), userData.getPass(), userData.getNick());
+                      jsonResponse.put("op", opSucess);
+                      jsonResponse.put("token", userData.getToken());
+                    }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
+                  }else{ jsonResponse = verifyJsonInput.getJsonResponse();} // "verifyJsonInput.operationIsValid" em caso de erro nas validações é criado um json de reposta para validação de nulo e REGEX.
                 }
                 case "005" -> { // Retornar Cadastro
+                  opSucess = "006";
+                  opError = "007";
                   if(verifyJsonInput.operationIsValid("retrieve")){
-                      jsonResponse = verifyJsonInput.getJsonResponse();
-                  }else{
-                      jsonResponse = verifyJsonInput.getJsonResponse();
-                  }
+                    userInput = verifyJsonInput.getValue("user");
+                    tokenInput = verifyJsonInput.getValue("token");
+                    User userData = userList.retrieveUserByToken(userInput, tokenInput);
+                    if(userData != null){
+                      userSessionList.createUser(userData.getUser(), userData.getPass(), userData.getNick());
+                      jsonResponse.put("op", opSucess);
+                      jsonResponse.put("user", userData.getUser());
+                      jsonResponse.put("nick", userData.getNick());
+                    }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
+                  }else{ jsonResponse = verifyJsonInput.getJsonResponse();}
                 }
+                
                 case "010" -> { // Cadastro
                   opSucess = "011";
                   opError = "012";
-                  String user = verifyJsonInput.getValue("user");
-                  String pass = verifyJsonInput.getValue("pass");
-                  String nick = verifyJsonInput.getValue("nick");
                   if(verifyJsonInput.operationIsValid("register")){
-                    if(userList.createUser(user, pass, nick)){
+                    userInput = verifyJsonInput.getValue("user");
+                    passInput = verifyJsonInput.getValue("pass");
+                    nickInput = verifyJsonInput.getValue("nick");
+
+                    if(userList.createUser(userInput, passInput, nickInput)){
                       jsonResponse.put("op", opSucess);
-                    }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Já existe uma conta com este usuário"); }
+                    }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgRegisterError);}
                   }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
                 }
+
                 case "020" -> { // Logout
+                  opSucess = "021";
+                  opError = "022";
                   if(verifyJsonInput.operationIsValid("logout")){
-                      jsonResponse = verifyJsonInput.getJsonResponse();
-                  }else{
-                      jsonResponse = verifyJsonInput.getJsonResponse();
-                  }
+                    userInput = verifyJsonInput.getValue("user");
+                    tokenInput = verifyJsonInput.getValue("token");
+                    User user = userSessionList.retrieveUserByToken(userInput, tokenInput);
+                    if(user != null){ 
+                      userSessionList.deleteUser(user); // Remove um objeto direto da lista de usuarios conectados.
+                      System.out.printf("Lista: %s", userSessionList.toString());
+                      jsonResponse.put("op", opSucess);
+                    } else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
+                  }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
                 }
+
                 case "030" -> { // Update
+                  opSucess = "031";
+                  opError = "032";
                   if(verifyJsonInput.operationIsValid("update")){
-                      jsonResponse = verifyJsonInput.getJsonResponse();
-                  }else{
-                      jsonResponse = verifyJsonInput.getJsonResponse();
-                  }
+                    userInput = verifyJsonInput.getValue("user");
+                    tokenInput = verifyJsonInput.getValue("token");
+                    passInput = verifyJsonInput.getValue("pass");
+                    newNickInput = verifyJsonInput.getValue("new_nick");
+                    newPassInput = verifyJsonInput.getValue("new_pass");
+                    if(userList.updateUser(userInput, passInput, tokenInput, newNickInput, newPassInput)){
+                      System.out.printf("Lista: %s", userList.toString());
+                      jsonResponse.put("op", opSucess);
+                    } else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
+                  }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
                 }
+
                 case "040" -> { // Delete
+                  opSucess = "041";
+                  opError = "042";
                   if(verifyJsonInput.operationIsValid("delete")){
-                      jsonResponse = verifyJsonInput.getJsonResponse();
-                  }else{
-                      jsonResponse = verifyJsonInput.getJsonResponse();
-                  }
+                    userInput = verifyJsonInput.getValue("user");
+                    tokenInput = verifyJsonInput.getValue("token");
+                    passInput = verifyJsonInput.getValue("pass");
+                    User user = userList.retrieveUserByAll(userInput, passInput, tokenInput);
+                    if(user != null){
+                      userSessionList.deleteUser(user); // Faz o Logou do usuario antes de remover.
+                      userList.deleteUser(user); // Remove um objeto direto da lista de usuarios existentes.
+                      System.out.printf("Lista: %s", userList.toString());
+                      jsonResponse.put("op", opSucess);
+                    } else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
+                  }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
                 }
 
                 default -> { jsonResponse.put("msg", "OP não estabelecido"); }

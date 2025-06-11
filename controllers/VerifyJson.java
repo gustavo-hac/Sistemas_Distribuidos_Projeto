@@ -10,8 +10,6 @@ import org.json.JSONObject;
 public class VerifyJson {
   JSONObject json = new JSONObject();
   JSONObject jsonResponse = new JSONObject();
-  //Criação dos REGEX
-  // String registerCode = "000";
 
   String regexOp = "[0-9]{3}$";
   String regexUser = "^[a-zA-Z0-9]{6,16}$";
@@ -24,15 +22,13 @@ public class VerifyJson {
   String errorRegex = "Algum campo com formato errado";
   String errorNull = "Algum campo obrigatório com valor nulo";
 
-  List<String> registerKeyList  = new ArrayList<>(Arrays.asList("user", "pass"));
+  List<String> registerKeyList  = new ArrayList<>(Arrays.asList("user", "pass", "nick"));
   List<String> loginKeyList = new ArrayList<>(Arrays.asList("user", "pass"));
   List<String> logoutKeyList = new ArrayList<>(Arrays.asList("user", "token"));
   List<String> retrieveKeyList = new ArrayList<>(Arrays.asList("user", "token"));
   List<String> updateKeyList = new ArrayList<>(Arrays.asList("user", "pass", "token", "new_nick", "new_pass"));
-  List<String> updateKeyListNull = new ArrayList<>(Arrays.asList("user", "pass", "token")); // Para a verificação de nulo pois os campos "new_nick", "new_pass" podem ser valores nulos.
   List<String> deleteKeyList = new ArrayList<>(Arrays.asList("user", "pass", "token"));
   List<String> updateAdmKeyList = new ArrayList<>(Arrays.asList("user", "token", "new_nick", "new_pass"));
-  List<String> updateAdmKeyListNull = new ArrayList<>(Arrays.asList("user", "token")); // Para a verificação de nulo pois os campos "new_nick", "new_pass" podem ser valores nulos.
   List<String> deleteAdmKeyList = new ArrayList<>(Arrays.asList("user", "token"));
 
   public VerifyJson(JSONObject json) {
@@ -44,28 +40,27 @@ public class VerifyJson {
   }
   // Faz as verificações de Nulo e Regex e retorna se o JSON está válido.
   public boolean operationIsValid(String operation){
-    String opSucess;
-    String opError;
+    String error;
     switch (operation) {
-      case "register" -> {opSucess = "011"; opError = "012";}
-      case "login" -> {opSucess = "001"; opError = "002";}
-      case "logout" -> {opSucess = "021"; opError = "022";}
-      case "retrieve" -> {opSucess = "006"; opError = "007";}
-      case "update" -> {opSucess = "031"; opError = "032";}
-      case "delete" -> {opSucess = "041"; opError = "042";}
-      case "updateADM" -> {opSucess = "081"; opError = "082";}
-      case "deleteADM" -> {opSucess = "091"; opError = "092";}
+      case "register" -> {error = "012";}
+      case "login" -> {error = "002";}
+      case "logout" -> {error = "022";}
+      case "retrieve" -> {error = "007";}
+      case "update" -> {error = "032";}
+      case "delete" -> {error = "042";}
+      case "updateADM" -> {error = "082";}
+      case "deleteADM" -> {error = "092";}
       default -> {System.out.printf("Erro na string da operação, String: %s , {função: operationIsValid[switch(operation)]}  ", operation); return false;}
     }
     if(this.operationIsNULL(operation)){ // Retorna TRUE quando os campos estão NULO, FALSE caso contrário.
-      jsonResponse.put("op", opError);
+      jsonResponse.put("op", error);
       jsonResponse.put("msg", this.errorNull);
       return false;
     }else{
       if(this.operationRegex(operation)){ // Retorna TRUE quando todos os campos estão dentro do REGEX, FALSE caso contrário.
         return true;
       }else{
-        jsonResponse.put("op", opError);
+        jsonResponse.put("op", error);
         jsonResponse.put("msg", this.errorRegex);
         return false;
       }
