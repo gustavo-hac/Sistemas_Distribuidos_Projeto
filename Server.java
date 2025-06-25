@@ -9,7 +9,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import controllers.VerifyJson;
-import javax.management.openmbean.OpenDataException;
 import models.User;
 import models.UserList;
 
@@ -58,9 +57,6 @@ public class Server extends Thread {
     start();
   }
 
-  /**
-    * Override java.language.Thread
-    */
   @Override
   public void run() {
     System.out.println("Nova thread de comunicacao iniciada.\n");
@@ -139,6 +135,7 @@ public class Server extends Thread {
 
                     if(userList.createUser(userInput, passInput, nickInput)){
                       jsonResponse.put("op", opSucess);
+                      jsonResponse.put("msg", "Cadastro realizado com sucesso");
                     }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgRegisterError);}
                   }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
                 }
@@ -154,11 +151,12 @@ public class Server extends Thread {
                       userSessionList.deleteUser(user); // Remove um objeto direto da lista de usuarios conectados.
                       System.out.printf("Lista: %s", userSessionList.toString());
                       jsonResponse.put("op", opSucess);
-                    } else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
+                      jsonResponse.put("msg", "Logout realizado com sucesso");
+                    }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
                   }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
                 }
 
-                case "030" -> { // Update
+                case "030" -> { // Update (Self)
                   opSucess = "031";
                   opError = "032";
                   if(verifyJsonInput.operationIsValid("update")){
@@ -170,24 +168,51 @@ public class Server extends Thread {
                     if(userList.updateUser(userInput, passInput, tokenInput, newNickInput, newPassInput)){
                       System.out.printf("Lista: %s", userList.toString());
                       jsonResponse.put("op", opSucess);
-                    } else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
+                      jsonResponse.put("msg", "Update realizado com sucesso");
+                    }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
                   }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
                 }
 
-                case "040" -> { // Delete
+                case "040" -> { // Delete (Self)
                   opSucess = "041";
                   opError = "042";
                   if(verifyJsonInput.operationIsValid("delete")){
                     userInput = verifyJsonInput.getValue("user");
                     tokenInput = verifyJsonInput.getValue("token");
                     passInput = verifyJsonInput.getValue("pass");
-                    User user = userList.retrieveUserByAll(userInput, passInput, tokenInput);
+                    User user = userList.retrieveUserByAll(userInput, passInput, tokenInput); // Verificação dos dados
                     if(user != null){
-                      userSessionList.deleteUser(user); // Faz o Logou do usuario antes de remover.
-                      userList.deleteUser(user); // Remove um objeto direto da lista de usuarios existentes.
-                      System.out.printf("Lista: %s", userList.toString());
-                      jsonResponse.put("op", opSucess);
-                    } else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
+                      if (!user.getToken().equals("a00001")) {
+                        userSessionList.deleteUser(user); // Faz o Logout do usuario antes de remover.
+                        userList.deleteUser(user); // Remove um objeto direto da lista de usuarios existentes.
+                        System.out.printf("Lista: %s", userList.toString());
+                        jsonResponse.put("op", opSucess);
+                        jsonResponse.put("msg", "Delete realizado com sucesso");
+                      }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Tentando remover usuário administrador");}
+                    }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
+                  }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                }
+
+                case "080" -> { // Update (ADM)
+                  opSucess = "081";
+                  opError = "082";
+                  if(verifyJsonInput.operationIsValid("updateADM")){
+                    tokenInput = verifyJsonInput.getValue("token");
+                    userInput = verifyJsonInput.getValue("user");
+                    newNickInput = verifyJsonInput.getValue("new_nick");
+                    newPassInput = verifyJsonInput.getValue("new_pass");
+                    if(tokenInput.equals("a00001")){
+                      User user = userList.retrieveUser(userInput);
+                      if(user != null){
+                        if (!user.getUser().equals("admadm")) {
+                          if(userList.updateUser(userInput, newNickInput, newPassInput)){ // redundância por causa do assincronismo
+                            System.out.printf("Lista: %s", userList.toString());
+                            jsonResponse.put("op", opSucess);
+                            jsonResponse.put("msg", "Update realizado com sucesso");
+                          }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Erro ao atualizar os dados, usuario não encontrado");}
+                        }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Tentando atualizar usuário administrador");}
+                      }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
+                    }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Usuário sem permissão para realizar operação");}
                   }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
                 }
 

@@ -18,10 +18,11 @@ public class VerifyJson {
   String regexNick = "^[a-zA-Z0-9]{6,16}$";
   String regexNewNick = "^[a-zA-Z0-9]{6,16}$|^$";
   String regexToken = "^(a|c)[0-9]{1,5}$";
+  String regexMsg = "^.{1,128}$"; // Não é a melhor maneira, mas é só para não ter que colocar verificações baseadas no tamanho da String.
 
   String errorRegex = "Algum campo com formato errado";
   String errorNull = "Algum campo obrigatório com valor nulo";
-
+  // Validações que o servidor precisa fazer nos campos após verificar "op"
   List<String> registerKeyList  = new ArrayList<>(Arrays.asList("user", "pass", "nick"));
   List<String> loginKeyList = new ArrayList<>(Arrays.asList("user", "pass"));
   List<String> logoutKeyList = new ArrayList<>(Arrays.asList("user", "token"));
@@ -30,6 +31,19 @@ public class VerifyJson {
   List<String> deleteKeyList = new ArrayList<>(Arrays.asList("user", "pass", "token"));
   List<String> updateAdmKeyList = new ArrayList<>(Arrays.asList("user", "token", "new_nick", "new_pass"));
   List<String> deleteAdmKeyList = new ArrayList<>(Arrays.asList("user", "token"));
+  List<String> retrieveAdmKeyList = new ArrayList<>(Arrays.asList( "token"));
+  // Validações que o cliente precisa fazer fazer nos campos após verificar "op" de sucesso
+  List<String> registerResponseKeyList  = new ArrayList<>(Arrays.asList("msg"));
+  List<String> loginResponseKeyList = new ArrayList<>(Arrays.asList("token"));
+  List<String> logoutResponseKeyList = new ArrayList<>(Arrays.asList("msg"));
+  List<String> retrieveResponseKeyList = new ArrayList<>(Arrays.asList("user", "nick"));
+  List<String> updateResponseKeyList = new ArrayList<>(Arrays.asList("msg"));
+  List<String> deleteResponseKeyList = new ArrayList<>(Arrays.asList("msg"));
+  List<String> updateAdmResponseKeyList = new ArrayList<>(Arrays.asList("msg"));
+  List<String> deleteAdmResponseKeyList = new ArrayList<>(Arrays.asList("msg"));
+  List<String> retrieveAdmResponseKeyList = new ArrayList<>(Arrays.asList("user_list"));
+  // Validação após verificar "op" de erro
+  List<String> errorResponseKeyList = new ArrayList<>(Arrays.asList("user_list"));
 
   public VerifyJson(JSONObject json) {
     this.json = json;
@@ -50,14 +64,44 @@ public class VerifyJson {
       case "delete" -> {error = "042";}
       case "updateADM" -> {error = "082";}
       case "deleteADM" -> {error = "092";}
+      case "retrieveADM" -> {error = "112";}
       default -> {System.out.printf("Erro na string da operação, String: %s , {função: operationIsValid[switch(operation)]}  ", operation); return false;}
     }
-    if(this.operationIsNULL(operation)){ // Retorna TRUE quando os campos estão NULO, FALSE caso contrário.
+    if(this.operationIsNULL(operation)){ //  Verifica se algum campo está NULO.
       jsonResponse.put("op", error);
       jsonResponse.put("msg", this.errorNull);
       return false;
     }else{
-      if(this.operationRegex(operation)){ // Retorna TRUE quando todos os campos estão dentro do REGEX, FALSE caso contrário.
+      if(this.operationRegex(operation)){ // Verifica se todos os campos estão dentro do REGEX.
+        return true;
+      }else{
+        jsonResponse.put("op", error);
+        jsonResponse.put("msg", this.errorRegex);
+        return false;
+      }
+    }
+  }
+
+  public boolean operationResponseIsValid(String operation){
+    String error;
+    switch (operation) {
+      case "register" -> {error = "012";}
+      case "login" -> {error = "002";}
+      case "logout" -> {error = "022";}
+      case "retrieve" -> {error = "007";}
+      case "update" -> {error = "032";}
+      case "delete" -> {error = "042";}
+      case "updateADM" -> {error = "082";}
+      case "deleteADM" -> {error = "092";}
+      case "retrieveADM" -> {error = "112";}
+      default -> {System.out.printf("Erro na string da operação, String: %s , {função: operationIsValid[switch(operation)]}  ", operation); return false;}
+    }
+    if(this.operationIsNULL(operation)){ //  Verifica se algum campo está NULO.
+      jsonResponse.put("op", error);
+      jsonResponse.put("msg", this.errorNull);
+      return false;
+    }else{
+      if(this.operationRegex(operation)){ // Verifica se todos os campos estão dentro do REGEX.
         return true;
       }else{
         jsonResponse.put("op", error);
@@ -80,6 +124,7 @@ public class VerifyJson {
       case "delete" -> {keyList = this.deleteKeyList;}
       case "updateADM" -> {keyList = this.updateAdmKeyList;}
       case "deleteADM" -> {keyList = this.deleteAdmKeyList;}
+      case "retrieveADM" -> {keyList = this.retrieveAdmKeyList;}
       default -> {System.out.printf("Erro na string da operação, String: %s  ", operation); return true;}
     }
     for (String key : keyList) {
@@ -101,6 +146,7 @@ public class VerifyJson {
       case "delete" -> {keyList = this.deleteKeyList;}
       case "updateADM" -> {keyList = this.updateAdmKeyList;}
       case "deleteADM" -> {keyList = this.deleteAdmKeyList;}
+      case "retrieveADM" -> {keyList = this.retrieveAdmKeyList;}
       default -> {System.out.printf("Erro na string da operação, String: %s  ", operation); return false;}
     }
     for (String key : keyList) {
@@ -121,6 +167,7 @@ public class VerifyJson {
         case "token" -> {regex = this.regexToken; value = this.getValue(key);}
         case "new_nick" -> {regex = this.regexNewNick; value = this.getValue(key);}
         case "new_pass" -> {regex = this.regexNewPass; value = this.getValue(key);}
+        case "msg" -> {regex = this.regexMsg; value = this.getValue(key);}
         default -> {System.err.printf("Campo \" %s\" não definido no protocolo", key); return false;}
     }
     return Pattern.matches(regex, value);

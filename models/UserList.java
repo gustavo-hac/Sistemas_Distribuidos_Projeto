@@ -6,9 +6,9 @@ import java.util.List;
 public class UserList {
   List<User> userList = new ArrayList<>();
   int tokenCount = 0;
-  String token = "a00001";
+  String token = "c00001";
   // Adicionar um qualquer
-  public void addUser(User user) { // Adiciona somente usuarios com o campo "user" não utilizados.
+  public void addUser(User user) {
     userList.add(user); this.tokenCount++;
   }
 
@@ -19,7 +19,8 @@ public class UserList {
   }
 
   // Delete
-  public boolean deleteUserByAll(String userInput, String passInput, String tokenInput) { // Adiciona somente usuarios com o campo "user" não utilizados.
+  public boolean deleteUserByAll(String userInput, String passInput, String tokenInput) { // Remove o próprio usuários desde que não sejam ADM
+    if(tokenInput.equals("a00001")){ System.out.println("Tentando apagar usuário administrador");return false; }
     for (User user : userList) {
       if(user.getUser().equals(userInput) && user.getPass().equals(passInput) && user.getToken().equals(tokenInput) ) {
         this.userList.remove(user);
@@ -28,7 +29,8 @@ public class UserList {
     return false; 
   }
   
-  public boolean deleteUserByToken(String userInput, String tokenInput) { // Adiciona somente usuarios com o campo "user" não utilizados.
+  public boolean deleteUserByToken(String userInput, String tokenInput) { // Remove qualquer usuário desde que não sejam ADM, Remoção utilizada pelo ADM
+    if(userInput.equals("admadm")){ System.out.println("Tentando apagar usuário administrador");return false; }
     for (User user : userList) {
       if(user.getUser().equals(userInput) && user.getToken().equals(tokenInput) ) {
         this.userList.remove(user);
@@ -37,12 +39,13 @@ public class UserList {
     return false; 
   }
 
-  public void  deleteUser(User user) { // Adiciona somente usuarios com o campo "user" não utilizados.
+  public void  deleteUser(User user) { // Remove usuários por instância
     this.userList.remove(user);
   }
 
   // Update
-  public boolean updateUser(String userInput, String passInput, String tokenInput, String newNickInput, String newPassInput) { // Adiciona somente usuarios com o campo "user" não utilizados.
+  public boolean updateUser(String userInput, String passInput, String tokenInput, String newNickInput, String newPassInput) { 
+    if(tokenInput.equals("a00001")){ System.out.println("Tentando alterar usuário administrador");return false; }
     for (User user : userList) {
       if(user.getUser().equals(userInput) && user.getPass().equals(passInput) && user.getToken().equals(tokenInput) ) {
         if(! newNickInput.isEmpty()){
@@ -54,6 +57,17 @@ public class UserList {
     return false; 
   }
 
+  public boolean updateUser(String userInput, String newNickInput, String newPassInput) { 
+    for (User user : userList) {
+      if(user.getUser().equals(userInput)) {
+        if(! newNickInput.isEmpty()){
+          user.setNick(newNickInput); }
+        if(! newPassInput.isEmpty()){
+          user.setPass(newPassInput); }
+        return true; }
+    }
+    return false; 
+  }
   // Retrieve
   public User retrieveUserByAll(String userInput, String userPass, String userToken){
     for (User user : userList) {
@@ -62,6 +76,7 @@ public class UserList {
     }
     return null;
   }
+
   public User retrieveUserByToken(String userInput, String userToken){
     for (User user : userList) {
       if(user.getUser().equals(userInput) && user.getToken().equals(userToken)) {
@@ -77,30 +92,22 @@ public class UserList {
     }
     return null;
   }
-  // Verifica se os dados do usuario inseridos existem
-  // public boolean verifyUser(String userInput, String passInput, String tokenInput) {
-  //   for (User user : userList) {
-  //     if(user.getUser().equals(userInput) && user.getPass().equals(passInput) && user.getToken().equals(tokenInput) ) {
-  //       return true; }
-  //   }
-  //   return false;
-  // }
 
-  // public boolean  verifyUserPass(String userInput, String passInput) {
-  //   for (User user : userList) {
-  //     if(user.getUser().equals(userInput) && user.getPass().equals(passInput)) {
-  //       return true; }
-  //   }
-  //   return false;
-  // }
+  public User retrieveUser(String userInput){
+    for (User user : userList) {
+      if(user.getUser().equals(userInput)) {
+        return user; }
+    }
+    return null;
+  }
 
-  // public boolean UserIsRegistered(String userInput) {
-  //   for (User user : userList) {
-  //     if(user.getUser().equals(userInput)) {
-  //       return true; }
-  //   }
-  //   return false;
-  // }
+  public boolean UserIsRegistered(String userInput) {
+    for (User user : userList) {
+      if(user.getUser().equals(userInput)) {
+        return true; }
+    }
+    return false;
+  }
 
   // Exibir todos os usuários
   @Override
