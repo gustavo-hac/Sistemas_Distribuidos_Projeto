@@ -5,12 +5,14 @@ public class User {
   private String pass;
   private String nick;
   private String token;
+  private boolean  adm;
   
-  public User(String user, String pass, String nick, String token) {
+  public User(String user, String pass, String nick, String token, boolean  adm) {
       this.user = user;
       this.pass = pass;
       this.nick = nick;
       this.token = token;
+      this.adm = adm;
   }
   
   public User(String user, String pass, String nick) {
@@ -35,6 +37,10 @@ public class User {
   public String getToken() {
       return token;
   }
+
+  public boolean  getAdm() {
+      return adm;
+  }
   
   // Setters
   public void setUser(String user) {
@@ -53,6 +59,9 @@ public class User {
       this.token = token;
   }
   
+  public void setToken(boolean  adm) {
+      this.adm = adm;
+  }
   @Override
   public String toString() {
       return "Usuario{" +

@@ -6,6 +6,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import controllers.VerifyJson;
+import models.User;
 public class Client {
 
     public static void main(String[] args) throws IOException {
@@ -44,12 +45,12 @@ public class Client {
         String sessionToken = null; 
         String currentOP = null;
         do {
-          System.out.print("Digite a opção:\n-1 = TRAVAR O SERVER, 0 = sair, 1 = Login, 2 = Retornar Dados, 3 = Cadastrar, 4 = Logout, 5 = Alterar Cadastro, 6 = Apagar Cadastro, 7 = Alterar Cadastro(admin) 8 = Apagar Cadastro(admin)\n");
+          System.out.print("Digite a opção:\n-1 = TRAVAR O SERVER, 0 = sair, 1 = Login, 2 = Retornar Dados, 3 = Cadastrar, 4 = Logout, 5 = Alterar Cadastro, 6 = Apagar Cadastro, 7 = Alterar Cadastro(admin) 8 = Apagar Cadastro(admin) 9 = Retornar Cadastro(admin)\n");
           System.out.println("ANTES\n");
           option = stdIn.readLine();
           switch (option){        
             case "-1" -> {
-              currentOP = null;
+              currentOP = "000";
               json = new JSONObject();
               json.put("op", "000"); // Cadastro
               System.out.println("Usuario:(I'ts id)");
@@ -100,7 +101,7 @@ public class Client {
               break;
             }
             case "3" -> {
-              currentOP = "005";
+              currentOP = "010";
               json = new JSONObject();
               json.put("op", "010"); // Cadastro
               System.out.println("Usuario:");
@@ -117,6 +118,7 @@ public class Client {
               break;
             }
             case "4" -> {
+              currentOP = "020";
               json = new JSONObject();
               json.put("op", "020"); // Logout
               System.out.println("Usuario:");
@@ -134,6 +136,7 @@ public class Client {
               break;
             }
             case "5" -> {
+              currentOP = "030";
               json = new JSONObject();
               json.put("op", "030"); // Alterar Cadastro
               System.out.println("Usuario:");
@@ -160,6 +163,7 @@ public class Client {
               break;
             }
             case "6" -> {
+              currentOP = "040";
               json = new JSONObject();
               json.put("op", "040"); // Apagar Cadastro
               System.out.println("Usuario:");
@@ -180,6 +184,7 @@ public class Client {
               break;
             }
             case "7" -> {
+              currentOP = "080";
               json = new JSONObject();
               json.put("op", "080"); // Alterar Cadastro (admin)
               System.out.println("Usuario:");
@@ -203,12 +208,28 @@ public class Client {
               break;
             }
             case "8" -> {
+              currentOP = "090";
               json = new JSONObject();
               json.put("op", "090"); // Apagar Cadastro (admin)
               System.out.println("Usuario:");
               user = stdIn.readLine();
               json.put("user", user);
-              System.out.println("Token)");
+              System.out.println("Token:");
+              token = stdIn.readLine();
+              if(token.equals("-1")){
+                if(sessionToken == null){ token = ""; }
+                else{ token = sessionToken; }
+              }
+              json.put("token", token);
+              out.println(json.toString());
+              System.out.println("Cliente enviou: " + json.toString());
+              break;
+            }
+            case "9" -> {
+              currentOP = "110";
+              json = new JSONObject();
+              json.put("op", "110"); // Retornar Cadastro (admin)
+              System.out.println("Token:");
               token = stdIn.readLine();
               if(token.equals("-1")){
                 if(sessionToken == null){ token = ""; }
@@ -228,19 +249,126 @@ public class Client {
           System.out.println("Cliente recebeu: " + inputLine);
 
           JSONObject jsonInput;
+          JSONObject jsonResponse;
+          String opError = "999";
           try {
             jsonInput = new JSONObject(inputLine);
-            VerifyJson verifyJsonInput = new VerifyJson(jsonInput);
-            if(jsonInput.get("op").toString().equals("001") ){
-              sessionToken = jsonInput.get("token").toString();
-              System.out.printf("\"token\" guardado: %s  ", sessionToken);
-              }
-            if(jsonInput.get("op") == "006"){ 
-              System.out.printf("\"user\": %s , \"nick\": %s"  ,jsonInput.get("user").toString(), jsonInput.get("nick").toString());
+            jsonResponse = new JSONObject();
+            if(! (jsonInput.isEmpty())){
+              VerifyJson verifyJsonInput = new VerifyJson(jsonInput);
+              if(! (verifyJsonInput.keyIsNULL("op"))){
+                String reponseOp = verifyJsonInput.getValue("op");
+                switch (reponseOp) { // Poderia somente colocar a verificação do campo "msg" para a maioria dos casos, mas assim já fica pronto caso os campos do protocolo mude
+                  case "001" -> {
+                    if(verifyJsonInput.operationResponseIsValid("sucess_login")){
+                      sessionToken = jsonInput.get("token").toString();
+                      System.out.println("\nRetorno de sucesso da operação " + currentOP + " recebida");
+                      System.out.printf("\"token\" guardado: %s  \n", sessionToken);
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }
+                  case "002" -> {
+                    if(verifyJsonInput.operationResponseIsValid("error_response")){
+                      System.out.println("\nRetorno de falha da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }
+                  case "006" -> {
+                    if(verifyJsonInput.operationResponseIsValid("sucess_retrieve")){
+                      System.out.printf("\"user\": %s , \"nick\": %s"  ,jsonInput.get("user").toString(), jsonInput.get("nick").toString());
+                      System.out.println("\nRetorno de sucesso da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }
+                  case "007" -> {
+                    if(verifyJsonInput.operationResponseIsValid("error_response")){
+                      System.out.println("\nRetorno de falha da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }
+                  case "011" -> {
+                    if(verifyJsonInput.operationResponseIsValid("sucess_register")){
+                      System.out.println("\nRetorno de sucesso da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }
+                  case "012" -> {
+                    if(verifyJsonInput.operationResponseIsValid("error_response")){
+                      System.out.println("\nRetorno de falha da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }
+                  case "021" -> {
+                    if(verifyJsonInput.operationResponseIsValid("sucess_logout")){
+                      System.out.println("\nRetorno de sucesso da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }
+                  case "022" -> {
+                    if(verifyJsonInput.operationResponseIsValid("error_response")){
+                      System.out.println("\nRetorno de falha da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }                  
+                  case "031" -> {
+                    if(verifyJsonInput.operationResponseIsValid("sucess_update")){
+                      System.out.println("\nRetorno de sucesso da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }
+                  case "032" -> {
+                    if(verifyJsonInput.operationResponseIsValid("error_response")){
+                      System.out.println("\nRetorno de falha da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }                  
+                  case "041" -> {
+                    if(verifyJsonInput.operationResponseIsValid("sucess_delete")){
+                      System.out.println("\nRetorno de sucesso da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }
+                  case "042" -> {
+                    if(verifyJsonInput.operationResponseIsValid("error_response")){
+                      System.out.println("\nRetorno de falha da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }                  
+                  case "081" -> {
+                    if(verifyJsonInput.operationResponseIsValid("sucess_updateADM")){
+                      System.out.println("\nRetorno de sucesso da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }
+                  case "082" -> {
+                    if(verifyJsonInput.operationResponseIsValid("error_response")){
+                      System.out.println("\nRetorno de falha da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }                  
+                  case "091" -> {
+                    if(verifyJsonInput.operationResponseIsValid("sucess_deleteADM")){
+                      System.out.println("\nRetorno de sucesso da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }
+                  case "092" -> {
+                    if(verifyJsonInput.operationResponseIsValid("error_response")){
+                      System.out.println("\nRetorno de falha da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }                  
+                  case "111" -> {
+                    if(verifyJsonInput.operationResponseIsValid("sucess_retrieveADM")){
+                      System.out.println("\nRetorno de sucesso da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse();}
+                  }
+                  case "112" -> {
+                    if(verifyJsonInput.operationResponseIsValid("error_response")){
+                      System.out.println("\nRetorno de falha da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }                            
+                  case "998" -> {
+                    if(verifyJsonInput.operationResponseIsValid("error_response")){
+                      System.out.println("\nRetorno de falha no campo \"op\" da operação " + currentOP + " recebida");
+                    }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                  }
+                  default -> { jsonResponse.put("op", opError); jsonResponse.put("msg", "OP não estabelecido");}
+                }
+              }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "OP está Nulo");}
+            }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "JSON está vazio");}
+
+            if(!jsonResponse.isEmpty()){
+              System.out.println("\nCliente enviou: " + jsonResponse.toString());
+              out.println(jsonResponse.toString());
             }
           }catch (JSONException  e) {
             jsonInput = new JSONObject();
-            System.out.println("Erro: Eeposta não é um JSON válido.");
+            System.out.println("Erro: Reposta não é um JSON válido.");
             jsonInput.put("msg", "Formato inválido. Esperado JSON.");
           }
         } while (!option.equals("0"));

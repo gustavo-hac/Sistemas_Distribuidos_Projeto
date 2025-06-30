@@ -4,7 +4,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -16,6 +18,10 @@ public class Server extends Thread {
   protected Socket clientSocket;
   UserList userList = new UserList(); // Usuarios existentes
   UserList userSessionList = new UserList(); // Usuarios conectados
+  String admKeyUser = "admin123";
+  String admKeyPass = "admin123";
+  String admKeyNick = "admin123";
+  String admKeyToken = "a00001";
   public static void main(String[] args) throws IOException {
     ServerSocket serverSocket = null;
 
@@ -60,6 +66,7 @@ public class Server extends Thread {
   @Override
   public void run() {
     System.out.println("Nova thread de comunicacao iniciada.\n");
+    userList.createAdm(admKeyUser, admKeyPass, admKeyNick, admKeyToken);
 
     try {
       try (PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
@@ -76,18 +83,12 @@ public class Server extends Thread {
             System.out.println("Erro: entrada não é um JSON válido.");
             // jsonResponse.put("erro", "Formato inválido. Esperado JSON.");
           }
-
-          String opSucess;
-          String opError;
+          String opSucess, opError;
+          String opProtocolError = "998";
           String msgRegisterError = "Já existe uma conta com este usuário"; 
           String msgValidationError = "Dados fornecidos não existem ou não conferem com os dados no sistema";
           // Declaração dos campos que podem ser fornecidos pelo Cliente.
-          String userInput;
-          String passInput;
-          String nickInput;
-          String tokenInput;
-          String newPassInput;
-          String newNickInput;
+          String userInput= "", passInput= "", nickInput= "", tokenInput= "", newPassInput= "", newNickInput= "";
 
           if(! (jsonInput.isEmpty())){
             VerifyJson verifyJsonInput = new VerifyJson(jsonInput);
@@ -103,9 +104,11 @@ public class Server extends Thread {
                     passInput = verifyJsonInput.getValue("pass");
                     User userData = userList.retrieveUserByPass(userInput, passInput);
                     if(userData != null){
-                      userSessionList.createUser(userData.getUser(), userData.getPass(), userData.getNick());
-                      jsonResponse.put("op", opSucess);
-                      jsonResponse.put("token", userData.getToken());
+                      if(! userSessionList.userIsRegistered(userInput)){
+                        userSessionList.createUser(userData.getUser(), userData.getPass(), userData.getNick());
+                        jsonResponse.put("op", opSucess);
+                        jsonResponse.put("token", userData.getToken());
+                      }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Você já está logado");}
                     }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
                   }else{ jsonResponse = verifyJsonInput.getJsonResponse();} // "verifyJsonInput.operationIsValid" em caso de erro nas validações é criado um json de reposta para validação de nulo e REGEX.
                 }
@@ -117,10 +120,11 @@ public class Server extends Thread {
                     tokenInput = verifyJsonInput.getValue("token");
                     User userData = userList.retrieveUserByToken(userInput, tokenInput);
                     if(userData != null){
-                      userSessionList.createUser(userData.getUser(), userData.getPass(), userData.getNick());
-                      jsonResponse.put("op", opSucess);
-                      jsonResponse.put("user", userData.getUser());
-                      jsonResponse.put("nick", userData.getNick());
+                      if(userSessionList.userIsRegistered(userInput)){
+                        jsonResponse.put("op", opSucess);
+                        jsonResponse.put("user", userData.getUser());
+                        jsonResponse.put("nick", userData.getNick());
+                      }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Usuário não está logado");}
                     }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
                   }else{ jsonResponse = verifyJsonInput.getJsonResponse();}
                 }
@@ -132,7 +136,6 @@ public class Server extends Thread {
                     userInput = verifyJsonInput.getValue("user");
                     passInput = verifyJsonInput.getValue("pass");
                     nickInput = verifyJsonInput.getValue("nick");
-
                     if(userList.createUser(userInput, passInput, nickInput)){
                       jsonResponse.put("op", opSucess);
                       jsonResponse.put("msg", "Cadastro realizado com sucesso");
@@ -147,11 +150,13 @@ public class Server extends Thread {
                     userInput = verifyJsonInput.getValue("user");
                     tokenInput = verifyJsonInput.getValue("token");
                     User user = userSessionList.retrieveUserByToken(userInput, tokenInput);
-                    if(user != null){ 
-                      userSessionList.deleteUser(user); // Remove um objeto direto da lista de usuarios conectados.
-                      System.out.printf("Lista: %s", userSessionList.toString());
-                      jsonResponse.put("op", opSucess);
-                      jsonResponse.put("msg", "Logout realizado com sucesso");
+                    if(user != null){
+                      if(userSessionList.userIsRegistered(userInput)){
+                        userSessionList.deleteUser(user); // Remove um objeto direto da lista de usuarios conectados.
+                        System.out.printf("Lista: %s", userSessionList.toString());
+                        jsonResponse.put("op", opSucess);
+                        jsonResponse.put("msg", "Logout realizado com sucesso");
+                      }else { jsonResponse.put("op", opError); jsonResponse.put("msg", "Usuário não está logado");}
                     }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
                   }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
                 }
@@ -165,10 +170,17 @@ public class Server extends Thread {
                     passInput = verifyJsonInput.getValue("pass");
                     newNickInput = verifyJsonInput.getValue("new_nick");
                     newPassInput = verifyJsonInput.getValue("new_pass");
-                    if(userList.updateUser(userInput, passInput, tokenInput, newNickInput, newPassInput)){
-                      System.out.printf("Lista: %s", userList.toString());
-                      jsonResponse.put("op", opSucess);
-                      jsonResponse.put("msg", "Update realizado com sucesso");
+                    User user = userList.retrieveUserByAll(userInput, passInput, tokenInput);
+                    if (user != null){
+                      if (user.getAdm() == false) {
+                        if(userSessionList.userIsRegistered(userInput)){
+                          userSessionList.updateUser(userInput, passInput, tokenInput, newNickInput, newPassInput);
+                          userList.updateUser(userInput, passInput, tokenInput, newNickInput, newPassInput);
+                          System.out.printf("Lista: %s", userList.toString());
+                          jsonResponse.put("op", opSucess);
+                          jsonResponse.put("msg", "Update realizado com sucesso");
+                        }else { jsonResponse.put("op", opError); jsonResponse.put("msg", "Usuário não está logado");}
+                      }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Tentando atualizar usuário administrador");}
                     }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
                   }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
                 }
@@ -182,12 +194,14 @@ public class Server extends Thread {
                     passInput = verifyJsonInput.getValue("pass");
                     User user = userList.retrieveUserByAll(userInput, passInput, tokenInput); // Verificação dos dados
                     if(user != null){
-                      if (!user.getToken().equals("a00001")) {
-                        userSessionList.deleteUser(user); // Faz o Logout do usuario antes de remover.
-                        userList.deleteUser(user); // Remove um objeto direto da lista de usuarios existentes.
-                        System.out.printf("Lista: %s", userList.toString());
-                        jsonResponse.put("op", opSucess);
-                        jsonResponse.put("msg", "Delete realizado com sucesso");
+                      if (user.getAdm() == false) {
+                        if(userSessionList.userIsRegistered(userInput)){ 
+                          userSessionList.deleteUser(user); // Faz o Logout do usuario antes de remover.
+                          userList.deleteUser(user); // Remove um objeto direto da lista de usuarios existentes.
+                          System.out.printf("Lista: %s", userList.toString());
+                          jsonResponse.put("op", opSucess);
+                          jsonResponse.put("msg", "Delete realizado com sucesso");
+                        }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Usuário não está logado");}
                       }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Tentando remover usuário administrador");}
                     }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
                   }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
@@ -201,25 +215,69 @@ public class Server extends Thread {
                     userInput = verifyJsonInput.getValue("user");
                     newNickInput = verifyJsonInput.getValue("new_nick");
                     newPassInput = verifyJsonInput.getValue("new_pass");
-                    if(tokenInput.equals("a00001")){
+                    if(tokenInput.equals(admKeyToken)){
                       User user = userList.retrieveUser(userInput);
                       if(user != null){
-                        if (!user.getUser().equals("admadm")) {
-                          if(userList.updateUser(userInput, newNickInput, newPassInput)){ // redundância por causa do assincronismo
+                        if (user.getAdm() == false) {
+                          if(userSessionList.tokenIsRegistered(tokenInput)){
+                            userList.updateUser(userInput, newNickInput, newPassInput);
                             System.out.printf("Lista: %s", userList.toString());
                             jsonResponse.put("op", opSucess);
                             jsonResponse.put("msg", "Update realizado com sucesso");
-                          }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Erro ao atualizar os dados, usuario não encontrado");}
+                          }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Admin não está logado");}
                         }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Tentando atualizar usuário administrador");}
                       }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
                     }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Usuário sem permissão para realizar operação");}
                   }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
                 }
 
-                default -> { jsonResponse.put("msg", "OP não estabelecido"); }
+                case "090" -> { // Delete (ADM)
+                  opSucess = "091";
+                  opError = "092";
+                  if(verifyJsonInput.operationIsValid("deleteADM")){
+                    tokenInput = verifyJsonInput.getValue("token");
+                    userInput = verifyJsonInput.getValue("user");
+                    if(tokenInput.equals(admKeyToken)){
+                      User user = userList.retrieveUser(userInput);
+                      if(user != null){
+                        if (user.getAdm() == false) {
+                          if(userSessionList.tokenIsRegistered(tokenInput)){
+                            userSessionList.deleteUser(user); // Faz o Logout do usuario antes de remover.
+                            userList.deleteUser(user); // Remove um objeto direto da lista de usuarios existentes.
+                            System.out.printf("Lista: %s", userList.toString());
+                            jsonResponse.put("op", opSucess);
+                            jsonResponse.put("msg", "Delete realizado com sucesso");
+                          }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Admin não está logado");}
+                        }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Tentando deletar usuário administrador");}
+                      }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
+                    }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Usuário sem permissão para realizar operação");}
+                  }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                }
+
+                case "110" -> { // Retrieve (ADM)
+                  opSucess = "111";
+                  opError = "112";
+                  if(verifyJsonInput.operationIsValid("retrieveADM")){
+                    tokenInput = verifyJsonInput.getValue("token");
+                    if(tokenInput.equals(admKeyToken)){
+                      if(userSessionList.tokenIsRegistered(tokenInput)){
+                        List<String> users = this.userList.retrieveUserList();
+                        jsonResponse.put("op", opSucess);
+                        jsonResponse.put("user_list", users);
+                      }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Admin não está logado");}
+                    }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Usuário sem permissão para realizar operação");}
+                  }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                }
+
+                case "999" -> { // Erro
+                  if(verifyJsonInput.operationIsValid("error_response")){
+                    System.out.println("\nRetorno de falha recebido");
+                  }else{ jsonResponse = verifyJsonInput.getJsonResponse();}
+                }
+                default -> { jsonResponse.put("op", opProtocolError); jsonResponse.put("msg", "OP não estabelecido"); }
               }
-            }else{ jsonResponse.put("msg", "OP está Nulo"); }
-          }else{ jsonResponse.put("msg", "JSON está vazio"); }
+            }else{ jsonResponse.put("op", opProtocolError); jsonResponse.put("msg", "OP está Nulo"); }
+          }else{ jsonResponse.put("op", opProtocolError); jsonResponse.put("msg", "JSON está vazio"); }
           
           if (inputLine.toUpperCase().equals("BYE"))
             break;

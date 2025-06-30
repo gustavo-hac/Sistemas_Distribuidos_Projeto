@@ -13,28 +13,43 @@ public class UserList {
   }
 
   // Register
+  public boolean createAdm(String userInput, String passInput, String nickInput, String tokenInput) { // Adiciona somente usuarios com o campo "user" não utilizados.
+    if(this.userIsRegistered(userInput)){ return false; }
+    else {userList.add(new User(userInput, passInput, nickInput, tokenInput, true)); return true; }
+  }
+
   public boolean createUser(String userInput, String passInput, String nickInput) { // Adiciona somente usuarios com o campo "user" não utilizados.
-    if(this.UserIsRegistered(userInput)){ return false; }
-    else {userList.add(new User(userInput, passInput, nickInput, this.token)); this.tokenCount++; return true; }
+    if(this.userIsRegistered(userInput)){ return false; }
+    else {userList.add(new User(userInput, passInput, nickInput, this.token, false)); this.tokenCount++; return true; }
   }
 
   // Delete
   public boolean deleteUserByAll(String userInput, String passInput, String tokenInput) { // Remove o próprio usuários desde que não sejam ADM
-    if(tokenInput.equals("a00001")){ System.out.println("Tentando apagar usuário administrador");return false; }
     for (User user : userList) {
       if(user.getUser().equals(userInput) && user.getPass().equals(passInput) && user.getToken().equals(tokenInput) ) {
-        this.userList.remove(user);
-        return true; }
+        if(user.getAdm() == false){ 
+          this.userList.remove(user);
+          return true;
+        }else{
+          System.out.println("Tentando apagar usuário administrador");
+          return false; 
+        }
+      }
     }
     return false; 
   }
   
   public boolean deleteUserByToken(String userInput, String tokenInput) { // Remove qualquer usuário desde que não sejam ADM, Remoção utilizada pelo ADM
-    if(userInput.equals("admadm")){ System.out.println("Tentando apagar usuário administrador");return false; }
     for (User user : userList) {
       if(user.getUser().equals(userInput) && user.getToken().equals(tokenInput) ) {
-        this.userList.remove(user);
-        return true; }
+        if(user.getAdm() == false){ 
+          this.userList.remove(user);
+          return true;
+        }else{
+          System.out.println("Tentando apagar usuário administrador");
+          return false; 
+        }
+      }
     }
     return false; 
   }
@@ -45,14 +60,19 @@ public class UserList {
 
   // Update
   public boolean updateUser(String userInput, String passInput, String tokenInput, String newNickInput, String newPassInput) { 
-    if(tokenInput.equals("a00001")){ System.out.println("Tentando alterar usuário administrador");return false; }
     for (User user : userList) {
       if(user.getUser().equals(userInput) && user.getPass().equals(passInput) && user.getToken().equals(tokenInput) ) {
-        if(! newNickInput.isEmpty()){
-          user.setNick(newNickInput); }
-        if(! newPassInput.isEmpty()){
-          user.setPass(newPassInput); }
-        return true; }
+        if(user.getAdm() == false){ 
+          if(! newNickInput.isEmpty()){
+            user.setNick(newNickInput); }
+          if(! newPassInput.isEmpty()){
+            user.setPass(newPassInput); }
+          return true; 
+        }else{
+          System.out.println("Tentando atualizar usuário administrador");
+          return false; 
+        }
+      }
     }
     return false; 
   }
@@ -60,11 +80,16 @@ public class UserList {
   public boolean updateUser(String userInput, String newNickInput, String newPassInput) { 
     for (User user : userList) {
       if(user.getUser().equals(userInput)) {
-        if(! newNickInput.isEmpty()){
-          user.setNick(newNickInput); }
-        if(! newPassInput.isEmpty()){
-          user.setPass(newPassInput); }
-        return true; }
+        if(user.getAdm() == false){
+          if(! newNickInput.isEmpty()){
+            user.setNick(newNickInput); }
+          if(! newPassInput.isEmpty()){
+            user.setPass(newPassInput); }
+          return true; }
+        }else{
+          System.out.println("Tentando atualizar usuário administrador");
+          return false; 
+        }
     }
     return false; 
   }
@@ -93,6 +118,14 @@ public class UserList {
     return null;
   }
 
+  public List<String> retrieveUserList(){
+    List<String> users = new ArrayList<>();
+    for (User user : userList) {
+      users.add(user.getUser());
+    }
+    return users;
+  }
+  
   public User retrieveUser(String userInput){
     for (User user : userList) {
       if(user.getUser().equals(userInput)) {
@@ -101,9 +134,17 @@ public class UserList {
     return null;
   }
 
-  public boolean UserIsRegistered(String userInput) {
+  public boolean userIsRegistered(String userInput) {
     for (User user : userList) {
       if(user.getUser().equals(userInput)) {
+        return true; }
+    }
+    return false;
+  }
+
+  public boolean tokenIsRegistered(String tokenInput) {
+    for (User user : userList) {
+      if(user.getToken().equals(tokenInput)) {
         return true; }
     }
     return false;

@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.*;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class VerifyJson {
@@ -18,7 +19,7 @@ public class VerifyJson {
   String regexNick = "^[a-zA-Z0-9]{6,16}$";
   String regexNewNick = "^[a-zA-Z0-9]{6,16}$|^$";
   String regexToken = "^(a|c)[0-9]{1,5}$";
-  String regexMsg = "^.{1,128}$"; // Não é a melhor maneira, mas é só para não ter que colocar verificações baseadas no tamanho da String.
+  String regexMsg = "^[a-zA-Z].{1,128}$";
 
   String errorRegex = "Algum campo com formato errado";
   String errorNull = "Algum campo obrigatório com valor nulo";
@@ -43,7 +44,7 @@ public class VerifyJson {
   List<String> deleteAdmResponseKeyList = new ArrayList<>(Arrays.asList("msg"));
   List<String> retrieveAdmResponseKeyList = new ArrayList<>(Arrays.asList("user_list"));
   // Validação após verificar "op" de erro
-  List<String> errorResponseKeyList = new ArrayList<>(Arrays.asList("user_list"));
+  List<String> errorResponseKeyList = new ArrayList<>(Arrays.asList("msg"));
 
   public VerifyJson(JSONObject json) {
     this.json = json;
@@ -65,6 +66,7 @@ public class VerifyJson {
       case "updateADM" -> {error = "082";}
       case "deleteADM" -> {error = "092";}
       case "retrieveADM" -> {error = "112";}
+      case "error_response" -> {error = "998";}
       default -> {System.out.printf("Erro na string da operação, String: %s , {função: operationIsValid[switch(operation)]}  ", operation); return false;}
     }
     if(this.operationIsNULL(operation)){ //  Verifica se algum campo está NULO.
@@ -83,25 +85,15 @@ public class VerifyJson {
   }
 
   public boolean operationResponseIsValid(String operation){
-    String error;
-    switch (operation) {
-      case "register" -> {error = "012";}
-      case "login" -> {error = "002";}
-      case "logout" -> {error = "022";}
-      case "retrieve" -> {error = "007";}
-      case "update" -> {error = "032";}
-      case "delete" -> {error = "042";}
-      case "updateADM" -> {error = "082";}
-      case "deleteADM" -> {error = "092";}
-      case "retrieveADM" -> {error = "112";}
-      default -> {System.out.printf("Erro na string da operação, String: %s , {função: operationIsValid[switch(operation)]}  ", operation); return false;}
-    }
+    String error = "999";
     if(this.operationIsNULL(operation)){ //  Verifica se algum campo está NULO.
+      System.out.println("operationIsNULL");
       jsonResponse.put("op", error);
       jsonResponse.put("msg", this.errorNull);
       return false;
     }else{
       if(this.operationRegex(operation)){ // Verifica se todos os campos estão dentro do REGEX.
+        System.out.println("operationRegex");
         return true;
       }else{
         jsonResponse.put("op", error);
@@ -125,6 +117,16 @@ public class VerifyJson {
       case "updateADM" -> {keyList = this.updateAdmKeyList;}
       case "deleteADM" -> {keyList = this.deleteAdmKeyList;}
       case "retrieveADM" -> {keyList = this.retrieveAdmKeyList;}
+      case "sucess_login" -> {keyList = this.loginResponseKeyList;}
+      case "sucess_register" -> {keyList = this.registerResponseKeyList;}
+      case "sucess_logout" -> {keyList = this.logoutResponseKeyList;}
+      case "sucess_retrieve" -> {keyList = this.retrieveResponseKeyList;}
+      case "sucess_update" -> {keyList = this.updateResponseKeyList;}
+      case "sucess_delete" -> {keyList = this.deleteResponseKeyList;}
+      case "sucess_updateADM" -> {keyList = this.updateAdmResponseKeyList;}
+      case "sucess_deleteADM" -> {keyList = this.deleteAdmResponseKeyList;}
+      case "sucess_retrieveADM" -> {keyList = this.retrieveAdmResponseKeyList;}
+      case "error_response" -> {keyList = this.errorResponseKeyList;}
       default -> {System.out.printf("Erro na string da operação, String: %s  ", operation); return true;}
     }
     for (String key : keyList) {
@@ -147,6 +149,16 @@ public class VerifyJson {
       case "updateADM" -> {keyList = this.updateAdmKeyList;}
       case "deleteADM" -> {keyList = this.deleteAdmKeyList;}
       case "retrieveADM" -> {keyList = this.retrieveAdmKeyList;}
+      case "sucess_login" -> {keyList = this.loginResponseKeyList;}
+      case "sucess_register" -> {keyList = this.registerResponseKeyList;}
+      case "sucess_logout" -> {keyList = this.logoutResponseKeyList;}
+      case "sucess_retrieve" -> {keyList = this.retrieveResponseKeyList;}
+      case "sucess_update" -> {keyList = this.updateResponseKeyList;}
+      case "sucess_delete" -> {keyList = this.deleteResponseKeyList;}
+      case "sucess_updateADM" -> {keyList = this.updateAdmResponseKeyList;}
+      case "sucess_deleteADM" -> {keyList = this.deleteAdmResponseKeyList;}
+      case "sucess_retrieveADM" -> {keyList = this.retrieveAdmResponseKeyList;}
+      case "error_response" -> {keyList = this.errorResponseKeyList;}
       default -> {System.out.printf("Erro na string da operação, String: %s  ", operation); return false;}
     }
     for (String key : keyList) {
@@ -168,13 +180,24 @@ public class VerifyJson {
         case "new_nick" -> {regex = this.regexNewNick; value = this.getValue(key);}
         case "new_pass" -> {regex = this.regexNewPass; value = this.getValue(key);}
         case "msg" -> {regex = this.regexMsg; value = this.getValue(key);}
+        case "user_list" -> {
+          regex = this.regexUser;
+          JSONArray userArray = this.json.getJSONArray("user_list");
+          for (int i = 0; i < userArray.length(); i++) {
+            value = userArray.getString(i);
+            if(! Pattern.matches(regex, value)){
+              return false;
+            }
+          }
+          return true;
+        }
         default -> {System.err.printf("Campo \" %s\" não definido no protocolo", key); return false;}
     }
     return Pattern.matches(regex, value);
   }
 
   // Verificações de Nulo
-  public boolean keyIsNULL(String key) { // Função que verifica se o valor um campo(key) do JSON está NULO. Retorna TRUE se for NULO, FALSE caso contrário.
+  public boolean keyIsNULL(String key) {
     return this.json.isNull(key);
   }
 
