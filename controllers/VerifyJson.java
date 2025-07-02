@@ -84,25 +84,50 @@ public class VerifyJson {
     }
   }
 
-  public boolean operationResponseIsValid(String operation){
+  public boolean operationResponseIsValid(String operation, String currentOP){
     String error = "999";
-    if(this.operationIsNULL(operation)){ //  Verifica se algum campo está NULO.
-      System.out.println("operationIsNULL");
+    if(! this.opResponseMatch(operation, currentOP)){
+      System.out.println("operationResponseIsNotCorrect");
       jsonResponse.put("op", error);
-      jsonResponse.put("msg", this.errorNull);
+      jsonResponse.put("msg", "Código \"op\" de resposta não está adequado");
       return false;
     }else{
-      if(this.operationRegex(operation)){ // Verifica se todos os campos estão dentro do REGEX.
-        System.out.println("operationRegex");
-        return true;
-      }else{
+      if(this.operationIsNULL(operation)){ //  Verifica se algum campo está NULO.
+        System.out.println("operationIsNULL");
         jsonResponse.put("op", error);
-        jsonResponse.put("msg", this.errorRegex);
+        jsonResponse.put("msg", this.errorNull);
         return false;
+      }else{
+        if(this.operationRegex(operation)){ // Verifica se todos os campos estão dentro do REGEX.
+          System.out.println("operationRegex");
+          return true;
+        }else{
+          jsonResponse.put("op", error);
+          jsonResponse.put("msg", this.errorRegex);
+          return false;
+        }
       }
     }
   }
 
+  public boolean opResponseMatch(String operation, String currentOP){
+    String op = operation.split("_")[1];
+    if(operation.equals("error_response")){
+      return true;
+    }else{
+      switch (op) {
+        case "register" -> { return true;}
+        case "logout" -> { return true;}
+        case "login" -> { return true;}
+        case "retrieve" -> { return true;}
+        case "update" -> { return true;}
+        case "loginADM" -> { return true;}
+        case "retrieveADM" -> { return true;}
+        case "updateADM" -> { return true;}
+        default -> {return false;}
+      }
+    }
+  }
   // Verificações de Nulo para cada "op" (Operação)
   public boolean operationIsNULL(String operation){
     List<String> keyList;

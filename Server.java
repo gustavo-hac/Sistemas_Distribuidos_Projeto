@@ -59,7 +59,7 @@ public class Server extends Thread {
 
   // Constructor
   private Server(Socket clientSoc) {
-    clientSocket = clientSoc;
+    clientSocket = clientSoc; 
     start();
   }
 
@@ -88,7 +88,7 @@ public class Server extends Thread {
           String msgRegisterError = "Já existe uma conta com este usuário"; 
           String msgValidationError = "Dados fornecidos não existem ou não conferem com os dados no sistema";
           // Declaração dos campos que podem ser fornecidos pelo Cliente.
-          String userInput= "", passInput= "", nickInput= "", tokenInput= "", newPassInput= "", newNickInput= "";
+          String userInput= "", passInput= "", nickInput= "", tokenInput= "", newPassInput= "", newNickInput= "", titleInput= "", subjectInput= "", msgInput= "";
 
           if(! (jsonInput.isEmpty())){
             VerifyJson verifyJsonInput = new VerifyJson(jsonInput);
@@ -204,6 +204,20 @@ public class Server extends Thread {
                         }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Usuário não está logado");}
                       }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Tentando remover usuário administrador");}
                     }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", msgValidationError);}
+                  }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
+                }
+                
+                case "050" -> { // Enviar Tópico
+                  opSucess = "051";
+                  opError = "052";
+                  if(verifyJsonInput.operationIsValid("sendTopic")){
+                    tokenInput = verifyJsonInput.getValue("token");
+                    titleInput = verifyJsonInput.getValue("title");
+                    subjectInput = verifyJsonInput.getValue("subject");
+                    msgInput = verifyJsonInput.getValue("msg");
+                    if(userSessionList.userIsRegistered(userInput)){ 
+
+                    }else{ jsonResponse.put("op", opError); jsonResponse.put("msg", "Usuário não está logado");}
                   }else{ jsonResponse = verifyJsonInput.getJsonResponse(); }
                 }
 
